@@ -17,7 +17,8 @@ type stateFlip struct {
 	fast    float64
 }
 
-func (m moving) watch() {
+func (m *moving) watch() {
+	log.Println("Watching for samples...")
 	for samp := range m.samp {
 		for len(m.slowAvg) < len(samp) {
 			i := len(m.slowAvg)
@@ -50,10 +51,12 @@ func (m moving) watch() {
 			}
 		}
 	}
+	log.Println("No more samples")
 }
 
 func newMoving(samp chan []byte) *moving {
 	return &moving{
-		samp: samp,
+		samp:    samp,
+		changes: make(chan stateFlip),
 	}
 }

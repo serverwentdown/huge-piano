@@ -18,18 +18,11 @@ func main() {
 	p := newPort(sp)
 	ma := newMoving(p.samp)
 	ch := chanLogger(ma.changes)
-	go func() {
-		for {
-			<-ch
-		}
-	}()
-	/*
-		mapped := newKeymap(ch, mapFile)
-		audio := newAudio(mapped.play, pack)
+	mapped := newKeymap(ch, mapFile)
+	audio := newAudio(mapped.play, pack)
 
-		go audio.watch()
-		go mapped.watch()
-	*/
+	go audio.watch()
+	go mapped.watch()
 	go ma.watch()
 	p.watch()
 }
@@ -37,11 +30,12 @@ func main() {
 func chanLogger(in chan stateFlip) chan stateFlip {
 	out := make(chan stateFlip)
 	go func() {
-		for {
-			sf := <-in
+		log.Println("Logging stateFlips...")
+		for sf := range in {
 			log.Print(sf)
 			out <- sf
 		}
+		log.Println("Not logging stateFlips")
 	}()
 	return out
 }

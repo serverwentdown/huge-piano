@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 
 	"github.com/goburrow/serial"
 )
@@ -12,7 +13,8 @@ type port struct {
 	samp chan []byte
 }
 
-func (p port) watch() {
+func (p *port) watch() {
+	log.Println("Opening serial port...")
 	port, err := serial.Open(p.Config)
 	if err != nil {
 		panic(err)

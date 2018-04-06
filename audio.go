@@ -2,8 +2,11 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
+	"path"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/faiface/beep"
@@ -15,19 +18,19 @@ type audio struct {
 	play       chan int
 	packDir    string
 	sampleRate beep.SampleRate
-	pack       []beep.Streamer
+	pack       []beep.StreamSeeker
 }
 
-func (a audio) load() {
+func (a *audio) load() {
 	a.loadStreamers()
 	a.initSpeaker()
 }
 
-func (a audio) initSpeaker() {
-	speaker.Init(a.sampleRate, a.sampleRate.N(time.Second/60))
+func (a *audio) initSpeaker() {
+	speaker.Init(a.sampleRate, a.sampleRate.N(time.Second/10))
 }
 
-func (a audio) loadStreamers() {
+func (a *audio) loadStreamers() {
 	files, err := ioutil.ReadDir(a.packDir)
 	if err != nil {
 		panic(err)
@@ -36,14 +39,16 @@ func (a audio) loadStreamers() {
 	sort.Sort(byFileInfoName(files))
 
 	for _, file := range files {
-		if file.Name()[0] == '.' {
+		if !strings.HasSuffix(file.Name(), ".wav") {
 			continue
 		}
-		a.loadStreamer(file.Name())
+
+		a.loadStreamer(path.Join(a.packDir, file.Name()))
 	}
 }
 
-func (a audio) loadStreamer(fn string) {
+func (a *audio) loadStreamer(fn string) {
+	log.Printf("Loading file %d: %s", len(a.pack), fn)
 	f, err := os.Open(fn)
 	if err != nil {
 		panic(err)
@@ -56,18 +61,21 @@ func (a audio) loadStreamer(fn string) {
 	a.sampleRate = format.SampleRate
 }
 
-func (a audio) playSample(i int) {
+func (a *audio) playSample(i int) {
+	a.pack[i].Seek(0)
 	speaker.Play(a.pack[i])
 }
 
-func (a audio) watch() {
-	for play, ready := <-a.play; ready; {
+func (a *audio) watch() {
+	log.Println("Awaiting for audio...")
+	for play := range a.play {
 		a.playSample(play)
 	}
+	log.Println("No more incoming audio")
 }
 
-func newAudio(play chan int, packDir string) audio {
-	a := audio{
+func newAudio(play chan int, packDir string) *audio {
+	a := &audio{
 		play:    play,
 		packDir: packDir,
 	}

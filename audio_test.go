@@ -6,15 +6,18 @@ import (
 )
 
 func TestPlay(t *testing.T) {
-	m := make(chan int)
+	p := make(chan int)
 
-	audio := newAudio(m, "2489__jobro__piano-ff")
+	audio := newAudio(p, "2489__jobro__piano-ff")
 	go audio.watch()
 
-	m <- 1
-	time.Sleep(time.Second * 2)
-	m <- 2
-	time.Sleep(time.Second * 2)
-	m <- 2
-	time.Sleep(time.Second * 2)
+	p <- 1
+	time.Sleep(time.Second * 1)
+	p <- 2
+	time.Sleep(time.Second * 1)
+	p <- 1
+	p <- 2
+	time.Sleep(time.Second * 1)
+
+	close(p)
 }
